@@ -36,6 +36,9 @@ func main() {
 	router.HandleFunc("/users/{id}", userHandler.UpdateUser).Methods("PUT")
 	router.HandleFunc("/users/{id}", userHandler.DeleteUser).Methods("DELETE")
 
+	// register wallet handler
+	handlers.RegisterWalletRoutes(router, dbConn)
+
 	// Start server
 	addr := ":8080"
 	log.Printf("Starting server on %s", addr)
