@@ -1,0 +1,46 @@
+package main
+
+import (
+	"log"
+	"net/http"
+	"os"
+
+	"github.com/gorilla/mux"
+	"github.com/masudcsesust04/ewallet-api/internal/db"
+	"github.com/masudcsesust04/ewallet-api/internal/handlers"
+)
+
+func main() {
+
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL environment variable is not set")
+	}
+
+	dbConn, err := db.NewDB(databaseURL)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %w", err)
+	}
+	defer dbConn.Close()
+
+	// Initialize user handler
+	userHandler := handlers.NewUserHandler(dbConn)
+
+	// Setup router
+
+	router := mux.NewRouter()
+	// user routes
+	router.HandleFunc("/users", userHandler.GetUsers).Methods("GET")
+	router.HandleFunc("/users", userHandler.CreateUsers).Methods("POST")
+	router.HandleFunc("/users/{id}", userHandler.GetUser).Methods("GET")
+	router.HandleFunc("/users/{id}", userHandler.UpdateUser).Methods("PUT")
+	router.HandleFunc("/users/{id}", userHandler.DeleteUser).Methods("DELETE")
+
+	// Start server
+	addr := ":8080"
+	log.Printf("Starting server on %s", addr)
+
+	if err := http.ListenAndServe(addr, router); err != nil {
+		log.Fatalf("Server failed: %v", err)
+	}
+}
