@@ -64,3 +64,43 @@ curl -X PUT http://localhost:8080/users/1 \
 ```bash
 curl -X DELETE http://localhost:8080/users/1
 ```
+
+## Wallet & Transactions
+1. Create new wallet:
+```bash
+curl -X POST http://localhost:8080/wallets/new \
+-H "Content-Type: application/json" \
+-d '{"user_id": 1, "balance": 200.0, "currency": "USD"}'
+```
+
+2. Deposit to wallet:
+```bash
+curl -X POST http://localhost:8080/wallets/deposit \
+-H "Content-Type: application/json" \
+-d '{"user_id": 1, "amount": 50.0}'
+```
+
+3. Withdraw from wallet:
+```bash
+curl -X POST http://localhost:8080/wallets/withdraw \
+-H "Content-Type: application/json" \
+-d '{"user_id": 1, "amount": 25.0}'
+```
+
+4. Fund trunsfer from one wallet to another:
+```bash
+curl -X POST http://localhost:8080/wallets/transfer \
+-H "Content-Type: application/json" \
+-d '{"from_wallet_id": 1, "to_wallet_id": 2, "amount": 25.0}'
+```
+
+5. Check wallet balance:
+```bash
+curl -X GET http://localhost:8080/wallets/balance?user_id=1
+```
+
+6. Transactions history:
+```bash
+curl -X GET http://localhost:8080/wallets/transactions?user_id=1
+```
+

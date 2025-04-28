@@ -38,9 +38,9 @@ CREATE UNIQUE INDEX idx_wallets_user_id ON wallets(user_id);
 
 CREATE TABLE transactions (
     id SERIAL PRIMARY KEY,
-    type VARCHAR(20) NOT NULL CHECK (type IN('deposit', 'withdrawal', 'transfer')), 
-    from_wallet_id INTEGER NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
-    to_wallet_id INTEGER NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
+    type VARCHAR(20) NOT NULL CHECK (type IN('deposit', 'withdrawal', 'transfer_debited', 'transfer_credited')), 
+    from_wallet_id INTEGER NOT NULL,
+    to_wallet_id INTEGER NULL,
     amount NUMERIC(20, 2) NOT NULL CHECK (amount > 0.0), 
     fee NUMERIC(8, 2) NOT NULL DEFAULT 0.0 CHECK(fee >= 0.0), 
     description TEXT,
@@ -48,6 +48,5 @@ CREATE TABLE transactions (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT fk_from_wallet FOREIGN KEY (from_wallet_id) REFERENCES wallets(id) ON DELETE SET NULL,
-    CONSTRAINT fk_to_wallet FOREIGN KEY (to_wallet_id) REFERENCES wallets(id) ON DELETE SET NULL
+    CONSTRAINT fk_from_wallet FOREIGN KEY (from_wallet_id) REFERENCES wallets(id) ON DELETE SET NULL
 )

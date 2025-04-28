@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/masudcsesust04/ewallet-api/internal/db"
@@ -37,6 +39,11 @@ type DepositRequest struct {
 	Amount float64 `json:"amount"`
 }
 
+type WithdrawRequest struct {
+	UserID int64   `json:"user_id"`
+	Amount float64 `json:"amount"`
+}
+
 type TransferRequest struct {
 	FromWalletID int64   `json:"from_wallet_id"`
 	ToWalletID   int64   `json:"to_wallet_id"`
@@ -60,29 +67,223 @@ func RegisterWalletRoutes(r *mux.Router, db *db.DB) {
 	r.HandleFunc("/wallets/withdraw", handler.Withdraw).Methods("POST")
 	r.HandleFunc("/wallets/transfer", handler.Transfer).Methods("POST")
 	r.HandleFunc("/wallets/balance", handler.Balance).Methods("GET")
-	r.HandleFunc("/wallets/transactions/{walletID}", handler.Transactions).Methods("GET")
+	r.HandleFunc("/wallets/transactions", handler.Transactions).Methods("GET")
 }
 
 func (h *WalletHandler) CreateNewWallet(w http.ResponseWriter, r *http.Request) {
-	return
+	var req WalletRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	wallet, err := h.DB.CreateWallet(req.UserID)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to create wallet")
+		return
+	}
+
+	newBalance := wallet.Balance + req.Balance
+	err = h.DB.UpdateWalletBalance(wallet.ID, newBalance)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to update wallet balance")
+		return
+	}
+
+	wallet.Balance = newBalance
+	tx := &db.Transaction{
+		FromWalletID: wallet.ID,
+		Type:         "deposit",
+		Amount:       req.Balance,
+		Status:       "success",
+		CreatedAt:    time.Now(),
+	}
+
+	err = h.DB.CreateTransaction(tx)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to log transaction")
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(wallet)
 }
 
 func (h *WalletHandler) Deposit(w http.ResponseWriter, r *http.Request) {
-	return
+	var req DepositRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	if req.Amount <= 0 {
+		respondError(w, http.StatusBadRequest, "Amount must be positive")
+		return
+	}
+
+	wallet, err := h.DB.GetWalletByUserID(req.UserID)
+	if err != nil {
+		// If wallet not found, create one
+		wallet, err = h.DB.CreateWallet(req.UserID)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "Failed to create wallet")
+			return
+		}
+	}
+
+	if wallet.Balance < req.Amount {
+		respondError(w, http.StatusBadRequest, "Insufficient funds")
+		return
+	}
+
+	newBalance := wallet.Balance + req.Amount
+	err = h.DB.UpdateWalletBalance(wallet.ID, newBalance)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to update wallet balance")
+		return
+	}
+
+	tx := &db.Transaction{
+		FromWalletID: wallet.ID,
+		Type:         "deposit",
+		Amount:       req.Amount,
+		Status:       "success",
+		CreatedAt:    time.Now(),
+	}
+
+	err = h.DB.CreateTransaction(tx)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to log transaction")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Deposited successfully"})
 }
 
 func (h *WalletHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
-	return
+	var req WithdrawRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	if req.Amount <= 0 {
+		respondError(w, http.StatusBadRequest, "Amount must be positive")
+		return
+	}
+
+	wallet, err := h.DB.GetWalletByUserID(req.UserID)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "Wallet not found")
+		return
+	}
+
+	if wallet.Balance < req.Amount {
+		respondError(w, http.StatusBadRequest, "Insufficient funds")
+		return
+	}
+
+	newBalance := wallet.Balance - req.Amount
+	err = h.DB.UpdateWalletBalance(wallet.ID, newBalance)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to update wallet balance")
+		return
+	}
+
+	tx := &db.Transaction{
+		FromWalletID: wallet.ID,
+		Type:         "withdrawal",
+		Amount:       req.Amount,
+		Status:       "success",
+		CreatedAt:    time.Now(),
+	}
+
+	err = h.DB.CreateTransaction(tx)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to log transaction")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Withdrawal successfully"})
 }
 
 func (h *WalletHandler) Transfer(w http.ResponseWriter, r *http.Request) {
-	return
+	var req TransferRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	if req.Amount <= 0 {
+		respondError(w, http.StatusBadRequest, "Amount must be positive")
+		return
+	}
+
+	if req.FromWalletID == req.ToWalletID {
+		respondError(w, http.StatusBadRequest, "Can not transfer to the same wallet account")
+		return
+	}
+
+	// Use atomic transfer function in DB layer
+	err := h.DB.TransferFunds(req.FromWalletID, req.ToWalletID, req.Amount)
+	if err != nil {
+		if err.Error() == "insufficient funds" {
+			respondError(w, http.StatusBadRequest, "insufficient funds")
+		} else {
+			respondError(w, http.StatusInternalServerError, "Failed to perform transfer: "+err.Error())
+		}
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Transfered successfully."})
 }
 
 func (h *WalletHandler) Balance(w http.ResponseWriter, r *http.Request) {
-	return
+	userIDParam := r.URL.Query().Get("user_id")
+	if userIDParam == "" {
+		respondError(w, http.StatusBadRequest, "Missing user_id query parameter")
+		return
+	}
+
+	userID, err := strconv.ParseInt(userIDParam, 10, 64)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid user_id query parameter")
+		return
+	}
+
+	wallet, err := h.DB.GetWalletByUserID(userID)
+	if err != nil {
+		respondError(w, http.StatusNotFound, "Wallet not found")
+		return
+	}
+
+	json.NewEncoder(w).Encode(wallet)
 }
 
 func (h *WalletHandler) Transactions(w http.ResponseWriter, r *http.Request) {
-	return
+	userIDParam := r.URL.Query().Get("user_id")
+	if userIDParam == "" {
+		respondError(w, http.StatusBadRequest, "Missing user_id query parameter")
+		return
+	}
+
+	userID, err := strconv.ParseInt(userIDParam, 10, 64)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid user_id query parameter")
+		return
+	}
+
+	wallet, err := h.DB.GetWalletByUserID(userID)
+	if err != nil {
+		respondError(w, http.StatusNotFound, "Wallet not found")
+		return
+	}
+
+	transactions, err := h.DB.GetTransactions(wallet.ID)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to get transactions")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, transactions)
 }
