@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/masudcsesust04/ewallet-api/internal/db"
 	"github.com/masudcsesust04/ewallet-api/internal/handlers"
+	"github.com/masudcsesust04/ewallet-api/internal/utils"
 )
 
 func main() {
@@ -30,11 +31,11 @@ func main() {
 
 	router := mux.NewRouter()
 	// user routes
-	router.HandleFunc("/users", userHandler.GetUsers).Methods("GET")
+	router.HandleFunc("/users", utils.JWTMiddleware(userHandler.GetUsers)).Methods("GET")
 	router.HandleFunc("/users", userHandler.CreateUsers).Methods("POST")
-	router.HandleFunc("/users/{id}", userHandler.GetUser).Methods("GET")
-	router.HandleFunc("/users/{id}", userHandler.UpdateUser).Methods("PUT")
-	router.HandleFunc("/users/{id}", userHandler.DeleteUser).Methods("DELETE")
+	router.HandleFunc("/users/{id}", utils.JWTMiddleware(userHandler.GetUser)).Methods("GET")
+	router.HandleFunc("/users/{id}", utils.JWTMiddleware(userHandler.UpdateUser)).Methods("PUT")
+	router.HandleFunc("/users/{id}", utils.JWTMiddleware(userHandler.DeleteUser)).Methods("DELETE")
 
 	// Auth routes
 	router.HandleFunc("/login", userHandler.Login).Methods("POST")

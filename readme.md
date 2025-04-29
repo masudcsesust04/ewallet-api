@@ -54,45 +54,50 @@ go test ./...
 ```
 
 API End point testing:
-0. Login
+1. Create user:
+```bash
+curl -X POST http://localhost:8080/users \
+-H "Content-Type: application/json" \
+-d '{"first_name": "md", "last_name": "rana", "phone_number": "809890899", "email": "rana@gmail.com", "password": "example123", "status": "active"}'
+```
+
+1. Login
 ```bash
 curl -X POST http://localhost:8080/login \
 -H "Content-Type: application/json" \
--d '{"email": "masud@gmail.com", "password": "example123"}'
+-d '{"email": "rana@gmail.com", "password": "example123"}'
 ```
 
-1. Logout:
+2. Logout:
 ```bash
 curl -X POST http://localhost:8080/logout \
 -H "Content-Type: application/json" \
 -d '{"refresh_token": "refresh_token_here"}'
 ```
 
-1. Create user:
+3. List of user:
 ```bash
-curl -X POST http://localhost:8080/users \
--H "Content-Type: application/json" \
--d '{"first_name": "masud", "last_name": "rana", "phone_number": "8098908080", "email": "masud@gmail.com", "password": "example123", "status": "active"}'
+curl -X GET http://localhost:8080/users \
+-H "Authorization: Bearer jwt_access_token_here"
 ```
 
-2. List of user:
+4. Get user by id:
 ```bash
-curl -X GET http://localhost:8080/users
+curl -X GET http://localhost:8080/users/1 \
+-H "Authorization: Bearer jwt_access_token_here"
 ```
 
-3. Get user by id:
-```bash
-curl -X GET http://localhost:8080/users/1
-```
-
-4. Update user:
+5. Update user:
 ```bash
 curl -X PUT http://localhost:8080/users/1 \
+-H "Authorization: Bearer jwt_access_token_here" \
 -d '{"phone_number": "8098908080"}'
 ```
-5. Delete id:
+
+6. Delete id:
 ```bash
-curl -X DELETE http://localhost:8080/users/1
+curl -X DELETE http://localhost:8080/users/1 \
+-H "Authorization: Bearer jwt_access_token_here"
 ```
 
 ## Wallet & Transactions
@@ -100,6 +105,7 @@ curl -X DELETE http://localhost:8080/users/1
 ```bash
 curl -X POST http://localhost:8080/wallets/new \
 -H "Content-Type: application/json" \
+-H "Authorization: Bearer jwt_access_token_here" \
 -d '{"user_id": 1, "balance": 200.0, "currency": "USD"}'
 ```
 
@@ -107,6 +113,7 @@ curl -X POST http://localhost:8080/wallets/new \
 ```bash
 curl -X POST http://localhost:8080/wallets/deposit \
 -H "Content-Type: application/json" \
+-H "Authorization: Bearer jwt_access_token_here" \
 -d '{"user_id": 1, "amount": 50.0}'
 ```
 
@@ -114,6 +121,7 @@ curl -X POST http://localhost:8080/wallets/deposit \
 ```bash
 curl -X POST http://localhost:8080/wallets/withdraw \
 -H "Content-Type: application/json" \
+-H "Authorization: Bearer jwt_access_token_here" \
 -d '{"user_id": 1, "amount": 25.0}'
 ```
 
@@ -121,16 +129,17 @@ curl -X POST http://localhost:8080/wallets/withdraw \
 ```bash
 curl -X POST http://localhost:8080/wallets/transfer \
 -H "Content-Type: application/json" \
+-H "Authorization: Bearer jwt_access_token_here" \
 -d '{"from_wallet_id": 1, "to_wallet_id": 2, "amount": 25.0}'
 ```
 
 5. Check wallet balance:
 ```bash
-curl -X GET 'http://localhost:8080/wallets/balance?user_id=1'
+curl -X GET 'http://localhost:8080/wallets/balance?user_id=1' -H "Authorization: Bearer jwt_access_token_here" 
 ```
 
 6. Transactions history:
 ```bash
-curl -X GET 'http://localhost:8080/wallets/transactions?wallet_id=1'
+curl -X GET 'http://localhost:8080/wallets/transactions?wallet_id=1' -H "Authorization: Bearer jwt_access_token_here" 
 ```
 

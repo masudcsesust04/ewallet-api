@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/masudcsesust04/ewallet-api/internal/db"
+	"github.com/masudcsesust04/ewallet-api/internal/utils"
 )
 
 type WalletDBInterface interface {
@@ -63,12 +64,12 @@ func respondError(w http.ResponseWriter, status int, message string) {
 
 func RegisterWalletRoutes(r *mux.Router, db *db.DB) {
 	handler := &WalletHandler{DB: db}
-	r.HandleFunc("/wallets/new", handler.CreateNewWallet).Methods("POST")
-	r.HandleFunc("/wallets/deposit", handler.Deposit).Methods("POST")
-	r.HandleFunc("/wallets/withdraw", handler.Withdraw).Methods("POST")
-	r.HandleFunc("/wallets/transfer", handler.Transfer).Methods("POST")
-	r.HandleFunc("/wallets/balance", handler.Balance).Methods("GET")
-	r.HandleFunc("/wallets/transactions", handler.Transactions).Methods("GET")
+	r.HandleFunc("/wallets/new", utils.JWTMiddleware(handler.CreateNewWallet)).Methods("POST")
+	r.HandleFunc("/wallets/deposit", utils.JWTMiddleware(handler.Deposit)).Methods("POST")
+	r.HandleFunc("/wallets/withdraw", utils.JWTMiddleware(handler.Withdraw)).Methods("POST")
+	r.HandleFunc("/wallets/transfer", utils.JWTMiddleware(handler.Transfer)).Methods("POST")
+	r.HandleFunc("/wallets/balance", utils.JWTMiddleware(handler.Balance)).Methods("GET")
+	r.HandleFunc("/wallets/transactions", utils.JWTMiddleware(handler.Transactions)).Methods("GET")
 }
 
 func (h *WalletHandler) CreateNewWallet(w http.ResponseWriter, r *http.Request) {
