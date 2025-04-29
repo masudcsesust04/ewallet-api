@@ -1,8 +1,7 @@
 # Ewallet API application
 
-
 ## Application overview
-This project provies a RESTful API server to implement a ewallet.
+This project provides a RESTful API server for implementing a digital wallet system, enabling core functionalities such as user account management, balance tracking, deposits, withdrawals, and transaction history.
 
 ## Project Setup
 - Go 1.23.2 or higher 
