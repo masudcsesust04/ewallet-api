@@ -96,11 +96,11 @@ curl -X POST http://localhost:8080/wallets/transfer \
 
 5. Check wallet balance:
 ```bash
-curl -X GET http://localhost:8080/wallets/balance?user_id=1
+curl -X GET 'http://localhost:8080/wallets/balance?user_id=1'
 ```
 
 6. Transactions history:
 ```bash
-curl -X GET http://localhost:8080/wallets/transactions?user_id=1
+curl -X GET 'http://localhost:8080/wallets/transactions?wallet_id=1'
 ```
 

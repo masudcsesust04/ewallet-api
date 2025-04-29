@@ -147,8 +147,8 @@ func (db *DB) CreateTransaction(tx *Transaction) error {
 	return nil
 }
 
-func (db *DB) GetTransactions(fromWalletID int64) ([]*Transaction, error) {
-	query := `SELECT * FROM transactions WHERE from_wallet_id = $1 ORDER BY created_at DESC`
+func (db *DB) GetTransactionsByWalletID(fromWalletID int64) ([]*Transaction, error) {
+	query := `SELECT id, type, from_wallet_id, to_wallet_id, amount, fee, status, created_at FROM transactions WHERE from_wallet_id = $1 ORDER BY created_at DESC`
 	rows, err := db.pool.Query(context.Background(), query, fromWalletID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transactions: %w", err)
@@ -158,7 +158,7 @@ func (db *DB) GetTransactions(fromWalletID int64) ([]*Transaction, error) {
 	var transactions []*Transaction
 	for rows.Next() {
 		tx := &Transaction{}
-		err := rows.Scan(&tx.ID, &tx.Type, &tx.FromWalletID, &tx.ToWalletID, &tx.Amount, &tx.Fee, &tx.Description, &tx.Status, &tx.CreatedAt)
+		err := rows.Scan(&tx.ID, &tx.Type, &tx.FromWalletID, &tx.ToWalletID, &tx.Amount, &tx.Fee, &tx.Status, &tx.CreatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan transaction: %w", err)
 		}

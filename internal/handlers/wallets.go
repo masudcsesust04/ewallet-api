@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -17,7 +18,7 @@ type WalletDBInterface interface {
 	UpdateWalletBalance(walletID int64, newBalance float64) error
 	CreateTransaction(tx *db.Transaction) error
 	TransferFunds(fromWalletID, toWalletID int64, amount float64) error
-	GetTransactions(fromWalletID int64) ([]*db.Transaction, error)
+	GetTransactionsByWalletID(fromWalletID int64) ([]*db.Transaction, error)
 }
 
 type WalletHandler struct {
@@ -261,25 +262,22 @@ func (h *WalletHandler) Balance(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WalletHandler) Transactions(w http.ResponseWriter, r *http.Request) {
-	userIDParam := r.URL.Query().Get("user_id")
-	if userIDParam == "" {
-		respondError(w, http.StatusBadRequest, "Missing user_id query parameter")
+	walletIDParam := r.URL.Query().Get("wallet_id")
+	if walletIDParam == "" {
+		respondError(w, http.StatusBadRequest, "Missing wallet_id query parameter")
 		return
 	}
 
-	userID, err := strconv.ParseInt(userIDParam, 10, 64)
+	walletID, err := strconv.ParseInt(walletIDParam, 10, 64)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid user_id query parameter")
+		respondError(w, http.StatusBadRequest, "Invalid wallet_id query parameter")
 		return
 	}
 
-	wallet, err := h.DB.GetWalletByUserID(userID)
-	if err != nil {
-		respondError(w, http.StatusNotFound, "Wallet not found")
-		return
-	}
+	fmt.Println(walletID)
+	transactions, err := h.DB.GetTransactionsByWalletID(walletID)
+	fmt.Println(err)
 
-	transactions, err := h.DB.GetTransactions(wallet.ID)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to get transactions")
 		return
