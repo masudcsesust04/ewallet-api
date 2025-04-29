@@ -28,6 +28,10 @@ go mod download
 ```bash
 export DATABASE_URL=postgres://user_name:password@127.0.0.1:5432/database_name?sslmode=disable
 ```
+5. Setup the `JWT_SECRET` environment variable:
+```bash
+   export JWT_SECRET="my-top-secret-key"
+```
 
 ## Running the server:
 To start the server, run:
@@ -37,7 +41,33 @@ go run cmd/server/main.go
 
 The server will start on port `8080`
 
+
+## Run test:
+1. Create a postgresql test database `ewallet_test` and create tables defined in `schema.sql` file.
+2. Set `TEST_DATABASE_URL` to environment variable:
+```bash
+export DATABASE_URL=postgres://user_name:password@127.0.0.1:5432/ewallet_test?sslmode=disable
+``` 
+3. Run test:
+```bash
+go test ./...
+```
+
 API End point testing:
+0. Login
+```bash
+curl -X POST http://localhost:8080/login \
+-H "Content-Type: application/json" \
+-d '{"email": "masud@gmail.com", "password": "example123"}'
+```
+
+1. Logout:
+```bash
+curl -X POST http://localhost:8080/logout \
+-H "Content-Type: application/json" \
+-d '{"refresh_token": "refresh_token_here"}'
+```
+
 1. Create user:
 ```bash
 curl -X POST http://localhost:8080/users \

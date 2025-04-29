@@ -33,10 +33,10 @@ type RefreshToken struct {
 
 // GetUserByEmail retr4ieves a user by email
 func (db *DB) GetUserByEmail(email string) (*User, error) {
-	query := `SELECT id, first_name, last_name, phone_number, email, status, created_at, updated_at FROM  users WHERE email = $1`
+	query := `SELECT id, first_name, last_name, phone_number, email, password_hash, status, created_at, updated_at FROM  users WHERE email = $1`
 	user := &User{}
 
-	err := db.pool.QueryRow(context.Background(), query, email).Scan(&user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+	err := db.pool.QueryRow(context.Background(), query, email).Scan(&user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Email, &user.PasswordHash, &user.Status, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
@@ -127,9 +127,9 @@ func (db *DB) DeleteUser(id int) error {
 }
 
 // CreateRefreshToken inserts a new refresh token into the database
-func (db *DB) CreateRefreshToken(refreshToken *RefreshToken) error {
+func (db *DB) CreateRefreshToken(rt *RefreshToken) error {
 	query := `INSERT INTO refresh_tokens (user_id, token, expires_at, created_at) VALUES ($1, $2, $3, $4) RETURNING id`
-	err := db.pool.QueryRow(context.Background(), query, refreshToken.UserID, refreshToken.Token, refreshToken.ExpiresAt, refreshToken.CreatedAt)
+	err := db.pool.QueryRow(context.Background(), query, rt.UserID, rt.Token, rt.ExpiresAt, rt.CreatedAt).Scan(&rt.ID)
 	if err != nil {
 		return fmt.Errorf("failed to create refresh token: %w", err)
 	}

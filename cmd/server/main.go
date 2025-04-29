@@ -36,6 +36,10 @@ func main() {
 	router.HandleFunc("/users/{id}", userHandler.UpdateUser).Methods("PUT")
 	router.HandleFunc("/users/{id}", userHandler.DeleteUser).Methods("DELETE")
 
+	// Auth routes
+	router.HandleFunc("/login", userHandler.Login).Methods("POST")
+	router.HandleFunc("/logout", userHandler.Logout).Methods("POST")
+
 	// register wallet handler
 	handlers.RegisterWalletRoutes(router, dbConn)
 
