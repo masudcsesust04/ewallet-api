@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,6 +9,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/masudcsesust04/ewallet-api/internal/db"
+	"github.com/masudcsesust04/ewallet-api/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -34,17 +33,6 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// generateRandomToken generates a secure random string for refresh tokens
-func generateRandomToken() string {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		// fallback to less secure random string if needed
-		return ""
-	}
-	return base64.URLEncoding.EncodeToString(b)
-}
-
 // Login handles POST /login
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req struct {
@@ -57,8 +45,6 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(req)
-
 	user, err := h.DB.GetUserByEmail(req.Email)
 	if err != nil || user == nil {
 		fmt.Println(err)
@@ -66,32 +52,19 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(user)
-
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password))
-	fmt.Println(err)
-
 	if err != nil {
 		http.Error(w, "Invalid password", http.StatusUnauthorized)
 		return
 	}
 
-	expirationTime := time.Now().Add(15 * time.Minute)
-	claims := &Claims{
-		UserID: user.ID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	accessToken, err := token.SignedString(jwtKey)
+	accessToken, err := utils.GenerateAccessToken(user.ID)
 	if err != nil {
 		http.Error(w, "Failed to generate access token", http.StatusInternalServerError)
 		return
 	}
 
-	refreshTokenString := generateRandomToken()
+	refreshTokenString := utils.GenerateRefreshToken()
 	refreshToken := &db.RefreshToken{
 		UserID:    user.ID,
 		Token:     refreshTokenString,
@@ -99,7 +72,6 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now(),
 	}
 
-	fmt.Printf("Creating refresh token: %+v\n", refreshToken)
 	err = h.DB.CreateRefreshToken(refreshToken)
 	if err != nil {
 		fmt.Printf("Error creating refresh token: %v\n", err)
@@ -140,4 +112,39 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+func (h *UserHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	var req RefreshRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	refreshToken, err := h.DB.GetRefreshToken(req.RefreshToken)
+	if err != nil {
+		http.Error(w, "Invalid refresh token", http.StatusUnauthorized)
+		return
+	}
+
+	err = utils.ValidateRefreshToken(refreshToken)
+	if err != nil {
+		http.Error(w, "Expired refresh token", http.StatusUnauthorized)
+		return
+	}
+
+	accessToken, err := utils.GenerateAccessToken(refreshToken.UserID)
+	if err != nil {
+		http.Error(w, "Could not generate access token", http.StatusInternalServerError)
+		return
+	}
+
+	// Optionally rotate refresh token here
+	json.NewEncoder(w).Encode(map[string]string{
+		"access_token": accessToken,
+	})
 }

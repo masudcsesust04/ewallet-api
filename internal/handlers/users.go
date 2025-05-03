@@ -11,12 +11,13 @@ import (
 
 type UserDBInterface interface {
 	GetAllUsers() ([]*db.User, error)
-	GetUserByID(id int) (*db.User, error)
+	GetUserByID(id int64) (*db.User, error)
 	GetUserByEmail(emaio string) (*db.User, error)
 	CreateUser(user *db.User) error
 	UpdateUser(user *db.User) error
-	DeleteUser(id int) error
+	DeleteUser(id int64) error
 	CreateRefreshToken(refreshToken *db.RefreshToken) error
+	GetRefreshToken(token string) (*db.RefreshToken, error)
 	DeleteRefreshToken(token string) error
 }
 
@@ -60,7 +61,7 @@ func (h *UserHandler) CreateUsers(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userIdStr := vars["id"]
-	id, err := strconv.Atoi(userIdStr)
+	id, err := strconv.ParseInt(userIdStr, 10, 64)
 
 	if err != nil {
 		http.Error(w, "Invalid user id", http.StatusBadRequest)
@@ -83,7 +84,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userIdStr := vars["id"]
-	id, err := strconv.Atoi(userIdStr)
+	id, err := strconv.ParseInt(userIdStr, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid user id", http.StatusBadRequest)
 	}
@@ -107,7 +108,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userIdStr := vars["id"]
-	id, err := strconv.Atoi(userIdStr)
+	id, err := strconv.ParseInt(userIdStr, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid user id", http.StatusBadRequest)
 	}

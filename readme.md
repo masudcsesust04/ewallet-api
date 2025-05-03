@@ -67,33 +67,40 @@ curl -X POST http://localhost:8080/login \
 -d '{"email": "rana@gmail.com", "password": "example123"}'
 ```
 
-2. Logout:
+2. Refresh token:
+```bash
+curl -X POST http://localhost:8080/token/refresh \
+-H "Content-Type: application/json" \
+-d '{"refresh_token": ""}'
+```
+
+3. Logout:
 ```bash
 curl -X POST http://localhost:8080/logout \
 -H "Content-Type: application/json" \
 -d '{"refresh_token": "refresh_token_here"}'
 ```
 
-3. List of user:
+4. List of user:
 ```bash
 curl -X GET http://localhost:8080/users \
 -H "Authorization: Bearer jwt_access_token_here"
 ```
 
-4. Get user by id:
+5. Get user by id:
 ```bash
 curl -X GET http://localhost:8080/users/1 \
 -H "Authorization: Bearer jwt_access_token_here"
 ```
 
-5. Update user:
+6. Update user:
 ```bash
 curl -X PUT http://localhost:8080/users/1 \
 -H "Authorization: Bearer jwt_access_token_here" \
 -d '{"phone_number": "8098908080"}'
 ```
 
-6. Delete id:
+7. Delete id:
 ```bash
 curl -X DELETE http://localhost:8080/users/1 \
 -H "Authorization: Bearer jwt_access_token_here"

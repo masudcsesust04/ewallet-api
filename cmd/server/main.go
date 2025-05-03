@@ -40,6 +40,7 @@ func main() {
 	// Auth routes
 	router.HandleFunc("/login", userHandler.Login).Methods("POST")
 	router.HandleFunc("/logout", userHandler.Logout).Methods("POST")
+	router.HandleFunc("/token/refresh", userHandler.RefreshToken).Methods("POST")
 
 	// register wallet handler
 	handlers.RegisterWalletRoutes(router, dbConn)

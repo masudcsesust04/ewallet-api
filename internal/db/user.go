@@ -10,7 +10,7 @@ import (
 
 // User represent a user in the system
 type User struct {
-	ID           int
+	ID           int64     `json:"id"`
 	FirstName    string    `json:"first_name"`
 	LastName     string    `json:"last_name"`
 	PhoneNumber  string    `json:"phone_number"`
@@ -24,11 +24,11 @@ type User struct {
 
 // RefreshToken represents a refresh token in the system
 type RefreshToken struct {
-	ID        int
-	UserID    int
-	Token     string
-	ExpiresAt time.Time
-	CreatedAt time.Time
+	ID        int64     `json:"id"`
+	UserID    int64     `json:"user_id"`
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"created_at"`
+	CreatedAt time.Time `json:"updated_at"`
 }
 
 // GetUserByEmail retr4ieves a user by email
@@ -63,7 +63,7 @@ func (db *DB) CreateUser(user *User) error {
 }
 
 // GetUserByID retrives a user by ID
-func (db *DB) GetUserByID(id int) (*User, error) {
+func (db *DB) GetUserByID(id int64) (*User, error) {
 	query := `SELECT id, first_name, last_name, phone_number, email, status, created_at, updated_at FROM  users WHERE id = $1`
 	user := &User{}
 
@@ -116,7 +116,7 @@ func (db *DB) UpdateUser(user *User) error {
 }
 
 // DeleteUser deletes a user by ID
-func (db *DB) DeleteUser(id int) error {
+func (db *DB) DeleteUser(id int64) error {
 	query := `DELETE FROM users WHERE ID = $1`
 	_, err := db.pool.Exec(context.Background(), query, id)
 	if err != nil {
@@ -140,13 +140,13 @@ func (db *DB) CreateRefreshToken(rt *RefreshToken) error {
 // GetRefreshToken inserts a new refresh token into the database
 func (db *DB) GetRefreshToken(token string) (*RefreshToken, error) {
 	query := `SELECT * FROM refresh_tokens WHERE token = $1`
-	refreshToken := &RefreshToken{}
-	err := db.pool.QueryRow(context.Background(), query, token).Scan(refreshToken.ID, refreshToken.UserID, refreshToken.Token, refreshToken.ExpiresAt, refreshToken.CreatedAt)
+	rt := &RefreshToken{}
+	err := db.pool.QueryRow(context.Background(), query, token).Scan(&rt.ID, &rt.UserID, &rt.Token, &rt.ExpiresAt, &rt.CreatedAt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create refresh token: %w", err)
+		return nil, fmt.Errorf("failed to get refresh token: %w", err)
 	}
 
-	return refreshToken, nil
+	return rt, nil
 }
 
 // DeleteRefreshToken delete refresh token by token string

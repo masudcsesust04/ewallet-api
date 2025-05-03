@@ -31,7 +31,7 @@ func (m *mockDB) CreateUser(user *db.User) error {
 	return nil
 }
 
-func (m *mockDB) GetUserByID(id int) (*db.User, error) {
+func (m *mockDB) GetUserByID(id int64) (*db.User, error) {
 	for _, u := range m.users {
 		if u.ID == id {
 			return u, nil
@@ -50,7 +50,7 @@ func (m *mockDB) UpdateUser(user *db.User) error {
 	return nil
 }
 
-func (m *mockDB) DeleteUser(id int) error {
+func (m *mockDB) DeleteUser(id int64) error {
 	for i, u := range m.users {
 		if u.ID == id {
 			m.users = append(m.users[:i], m.users[i+1:]...)
@@ -66,6 +66,10 @@ func (m *mockDB) CreateRefreshToken(rt *db.RefreshToken) error {
 
 func (m *mockDB) DeleteRefreshToken(token string) error {
 	return nil
+}
+
+func (m *mockDB) GetRefreshToken(token string) (*db.RefreshToken, error) {
+	return nil, nil
 }
 
 func TestGetUsers(t *testing.T) {
