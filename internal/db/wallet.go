@@ -24,7 +24,7 @@ type Transaction struct {
 	ToWalletID   int64     `json:"to_wallet_id"`
 	Amount       float64   `json:"amount"`
 	Fee          float64   `json:"fee"`
-	Description  string    `json:"description"`
+	Note         string    `json:"note"`
 	Status       string    `json:"status"`
 	CreatedAt    time.Time `json:"created_at"`
 }
@@ -122,12 +122,12 @@ func (db *DB) TransferFunds(fromWalletID, toWalletID int64, amount float64) erro
 	}
 
 	// Save transactions
-	_, err = tx.Exec(ctx, `INSERT INTO transactions (type, from_wallet_id, to_wallet_id, amount, status) VALUES ('transfer_debited', $1, $2, $3, $4)`, fromWalletID, toWalletID, amount, "success")
+	_, err = tx.Exec(ctx, `INSERT INTO transactions (type, from_wallet_id, to_wallet_id, amount, status) VALUES ('send', $1, $2, $3, $4)`, fromWalletID, toWalletID, amount, "completed")
 	if err != nil {
 		return fmt.Errorf("failed to log sender transaction: %w", err)
 	}
 
-	_, err = tx.Exec(ctx, `INSERT INTO transactions (type, from_wallet_id, to_wallet_id, amount, status) VALUES ('transfer_credited', $1, $2, $3, $4)`, toWalletID, fromWalletID, amount, "success")
+	_, err = tx.Exec(ctx, `INSERT INTO transactions (type, from_wallet_id, to_wallet_id, amount, status) VALUES ('receive', $1, $2, $3, $4)`, toWalletID, fromWalletID, amount, "completed")
 	if err != nil {
 		return fmt.Errorf("failed to log receiver transaction: %w", err)
 	}
@@ -137,8 +137,8 @@ func (db *DB) TransferFunds(fromWalletID, toWalletID int64, amount float64) erro
 
 // CreateTransaction inserts a new tranaction into the database
 func (db *DB) CreateTransaction(tx *Transaction) error {
-	query := `INSERT INTO transactions (type, from_wallet_id, to_wallet_id, amount, fee, description, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING ID`
-	err := db.pool.QueryRow(context.Background(), query, tx.Type, tx.FromWalletID, tx.ToWalletID, tx.Amount, tx.Fee, tx.Description, tx.Status).Scan(&tx.ID)
+	query := `INSERT INTO transactions (type, from_wallet_id, to_wallet_id, amount, fee, note, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING ID`
+	err := db.pool.QueryRow(context.Background(), query, tx.Type, tx.FromWalletID, tx.ToWalletID, tx.Amount, tx.Fee, tx.Note, tx.Status).Scan(&tx.ID)
 	if err != nil {
 		fmt.Println(err)
 		return fmt.Errorf("failed to create transaction: %w", err)

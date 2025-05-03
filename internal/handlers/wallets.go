@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -97,7 +96,7 @@ func (h *WalletHandler) CreateNewWallet(w http.ResponseWriter, r *http.Request) 
 		FromWalletID: wallet.ID,
 		Type:         "deposit",
 		Amount:       req.Balance,
-		Status:       "success",
+		Status:       "completed",
 		CreatedAt:    time.Now(),
 	}
 
@@ -149,7 +148,7 @@ func (h *WalletHandler) Deposit(w http.ResponseWriter, r *http.Request) {
 		FromWalletID: wallet.ID,
 		Type:         "deposit",
 		Amount:       req.Amount,
-		Status:       "success",
+		Status:       "completed",
 		CreatedAt:    time.Now(),
 	}
 
@@ -196,7 +195,7 @@ func (h *WalletHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		FromWalletID: wallet.ID,
 		Type:         "withdrawal",
 		Amount:       req.Amount,
-		Status:       "success",
+		Status:       "completed",
 		CreatedAt:    time.Now(),
 	}
 
@@ -275,10 +274,7 @@ func (h *WalletHandler) Transactions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(walletID)
 	transactions, err := h.DB.GetTransactionsByWalletID(walletID)
-	fmt.Println(err)
-
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to get transactions")
 		return
