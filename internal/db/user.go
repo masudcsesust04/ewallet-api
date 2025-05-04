@@ -138,10 +138,10 @@ func (db *DB) CreateRefreshToken(rt *RefreshToken) error {
 }
 
 // GetRefreshToken inserts a new refresh token into the database
-func (db *DB) GetRefreshToken(token string) (*RefreshToken, error) {
-	query := `SELECT * FROM refresh_tokens WHERE token = $1`
+func (db *DB) GetRefreshToken(userID int64) (*RefreshToken, error) {
+	query := `SELECT * FROM refresh_tokens WHERE user_id = $1 AND expires_at > NOW() ORDER BY id DESC LIMIT 1`
 	rt := &RefreshToken{}
-	err := db.pool.QueryRow(context.Background(), query, token).Scan(&rt.ID, &rt.UserID, &rt.Token, &rt.ExpiresAt, &rt.CreatedAt)
+	err := db.pool.QueryRow(context.Background(), query, userID).Scan(&rt.ID, &rt.UserID, &rt.Token, &rt.ExpiresAt, &rt.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get refresh token: %w", err)
 	}
@@ -149,10 +149,10 @@ func (db *DB) GetRefreshToken(token string) (*RefreshToken, error) {
 	return rt, nil
 }
 
-// DeleteRefreshToken delete refresh token by token string
-func (db *DB) DeleteRefreshToken(token string) error {
-	query := `DELETE FROM refresh_tokens WHERE token = $1`
-	_, err := db.pool.Exec(context.Background(), query, token)
+// DeleteRefreshToken delete refresh token by user_id
+func (db *DB) DeleteRefreshToken(userId int64) error {
+	query := `DELETE FROM refresh_tokens WHERE user_id = $1`
+	_, err := db.pool.Exec(context.Background(), query, userId)
 	if err != nil {
 		return fmt.Errorf("failed to refresh token: %w", err)
 	}

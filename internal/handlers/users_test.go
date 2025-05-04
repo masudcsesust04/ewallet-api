@@ -64,11 +64,11 @@ func (m *mockDB) CreateRefreshToken(rt *db.RefreshToken) error {
 	return nil
 }
 
-func (m *mockDB) DeleteRefreshToken(token string) error {
+func (m *mockDB) DeleteRefreshToken(userID int64) error {
 	return nil
 }
 
-func (m *mockDB) GetRefreshToken(token string) (*db.RefreshToken, error) {
+func (m *mockDB) GetRefreshToken(userID int64) (*db.RefreshToken, error) {
 	return nil, nil
 }
 

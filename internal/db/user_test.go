@@ -112,7 +112,7 @@ func TestCreateAndDeleteRefreshToken(t *testing.T) {
 		t.Fatalf("CreateRefreshToken failed: %v", err)
 	}
 
-	gotRT, err := testDB.GetRefreshToken(rt.Token)
+	gotRT, err := testDB.GetRefreshToken(rt.UserID)
 	if err != nil {
 		t.Fatalf("GetRefreshToken failed: %v", err)
 	}
@@ -120,12 +120,12 @@ func TestCreateAndDeleteRefreshToken(t *testing.T) {
 		t.Fatalf("GetRefreshToken returned wrong token")
 	}
 
-	err = testDB.DeleteRefreshToken(rt.Token)
+	err = testDB.DeleteRefreshToken(rt.UserID)
 	if err != nil {
 		t.Fatalf("DeleteRefreshToken failed: %v", err)
 	}
 
-	deletedRT, err := testDB.GetRefreshToken(rt.Token)
+	deletedRT, err := testDB.GetRefreshToken(rt.UserID)
 	if err == nil && deletedRT != nil {
 		t.Fatalf("DeleteRefreshToken did not delete token")
 	}

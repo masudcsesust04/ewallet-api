@@ -64,10 +64,16 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	refreshTokenString := utils.GenerateRefreshToken()
+	rawSecureToken, err := utils.GenerateSecureToken(32)
+	if err != nil {
+		http.Error(w, "Secure token generation error", http.StatusInternalServerError)
+		return
+	}
+
+	hashSecureToken, _ := utils.HashToken(rawSecureToken)
 	refreshToken := &db.RefreshToken{
 		UserID:    user.ID,
-		Token:     refreshTokenString,
+		Token:     hashSecureToken,
 		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
 		CreatedAt: time.Now(),
 	}
@@ -84,7 +90,7 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 	}{
 		AccessToken:  accessToken,
-		RefreshToken: refreshTokenString,
+		RefreshToken: rawSecureToken,
 	}
 
 	json.NewEncoder(w).Encode(resp)
@@ -93,10 +99,10 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 // Logout handles POST /logout
 func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	// For logout, typically the client deletes the tokens.
-	// Here, we expect the refresh token in the request body to delete it from DB.
+	// Here, we expect the user_id in the request body to delete refresh token from DB.
 
 	type LogoutRequest struct {
-		RefreshToken string `json:"refresh_token"`
+		UserID int64 `json:"user_id"`
 	}
 
 	var req LogoutRequest
@@ -105,7 +111,7 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.DB.DeleteRefreshToken(req.RefreshToken)
+	err := h.DB.DeleteRefreshToken(req.UserID)
 	if err != nil {
 		http.Error(w, "Failed to logout: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -115,6 +121,7 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 type RefreshRequest struct {
+	UserID       int64  `json:"user_id"`
 	RefreshToken string `json:"refresh_token"`
 }
 
@@ -125,7 +132,7 @@ func (h *UserHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	refreshToken, err := h.DB.GetRefreshToken(req.RefreshToken)
+	refreshToken, err := h.DB.GetRefreshToken(req.UserID)
 	if err != nil {
 		http.Error(w, "Invalid refresh token", http.StatusUnauthorized)
 		return
@@ -137,9 +144,14 @@ func (h *UserHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := utils.GenerateAccessToken(refreshToken.UserID)
+	if utils.CompareToken(refreshToken.Token, req.RefreshToken) != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	accessToken, err := utils.GenerateAccessToken(req.UserID)
 	if err != nil {
-		http.Error(w, "Could not generate access token", http.StatusInternalServerError)
+		http.Error(w, "Failed to generate access token", http.StatusInternalServerError)
 		return
 	}
 

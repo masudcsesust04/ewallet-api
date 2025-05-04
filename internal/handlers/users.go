@@ -17,8 +17,8 @@ type UserDBInterface interface {
 	UpdateUser(user *db.User) error
 	DeleteUser(id int64) error
 	CreateRefreshToken(refreshToken *db.RefreshToken) error
-	GetRefreshToken(token string) (*db.RefreshToken, error)
-	DeleteRefreshToken(token string) error
+	GetRefreshToken(userID int64) (*db.RefreshToken, error)
+	DeleteRefreshToken(userID int64) error
 }
 
 type UserHandler struct {

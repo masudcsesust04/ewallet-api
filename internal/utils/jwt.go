@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/masudcsesust04/ewallet-api/internal/db"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -75,11 +76,28 @@ func GenerateRefreshToken() string {
 }
 
 func ValidateRefreshToken(refreshToken *db.RefreshToken) error {
-	exp := refreshToken.ExpiresAt.Unix()
-
-	if exp < time.Now().Unix() {
+	if time.Now().After(refreshToken.ExpiresAt) {
 		return fmt.Errorf("refresh token has expired")
 	}
 
 	return nil
+}
+
+func GenerateSecureToken(length int) (string, error) {
+	bytes := make([]byte, length)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.URLEncoding.EncodeToString(bytes), nil
+}
+
+func HashToken(token string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(token), bcrypt.DefaultCost)
+	return string(hash), err
+}
+
+func CompareToken(hash, token string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(token))
 }
