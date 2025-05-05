@@ -6,19 +6,19 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
+	"github.com/masudcsesust04/ewallet-api/config"
 	"github.com/masudcsesust04/ewallet-api/internal/db"
 	"github.com/masudcsesust04/ewallet-api/internal/handlers"
 	"github.com/masudcsesust04/ewallet-api/internal/utils"
 )
 
 func main() {
+	// Load environment variables
+	loadEnv()
 
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		log.Fatal("DATABASE_URL environment variable is not set")
-	}
-
-	dbConn, err := db.NewDB(databaseURL)
+	// Initialize database connection
+	dbConn, err := db.NewDB(config.DatabaseURL)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %w", err)
 	}
@@ -52,4 +52,25 @@ func main() {
 	if err := http.ListenAndServe(addr, router); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
+}
+
+func loadEnv() {
+	// Load environment variables from .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
+	if jwtSecretKey == "" {
+		log.Fatal("JWT_SECRET environment variable is not set")
+	}
+
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL environment variable is not set")
+	}
+
+	config.JWTSecretKey = []byte(jwtSecretKey)
+	config.DatabaseURL = databaseURL
 }

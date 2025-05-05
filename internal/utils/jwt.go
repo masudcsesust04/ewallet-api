@@ -5,17 +5,13 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/masudcsesust04/ewallet-api/config"
 	"github.com/masudcsesust04/ewallet-api/internal/db"
 	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	JWTSecretKey = []byte(os.Getenv("JWT_SECRET"))
 )
 
 // JWTMiddleware is a middleware to validate JWT token in Authorization header
@@ -33,7 +29,7 @@ func JWTMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		if string(JWTSecretKey) == "" {
+		if string(config.JWTSecretKey) == "" {
 			http.Error(w, "Server configuration error", http.StatusInternalServerError)
 			return
 		}
@@ -42,7 +38,7 @@ func JWTMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-			return []byte(JWTSecretKey), nil
+			return []byte(config.JWTSecretKey), nil
 		})
 
 		if err != nil || !token.Valid {
@@ -61,7 +57,7 @@ func GenerateAccessToken(userID int64) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(JWTSecretKey)
+	return token.SignedString(config.JWTSecretKey)
 }
 
 func GenerateRefreshToken() string {
