@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -18,6 +19,7 @@ func TestCreateAndGetWallet(t *testing.T) {
 		LastName:    "User",
 		PhoneNumber: "1234567890",
 		Email:       "testuser@example.com",
+		Status:      "active",
 		Password:    "password123",
 	}
 	err := db.CreateUser(user)
@@ -48,6 +50,7 @@ func TestUpdateWalletBalance(t *testing.T) {
 		LastName:    "User",
 		PhoneNumber: "0987654321",
 		Email:       "updateuser@example.com",
+		Status:      "active",
 		Password:    "password123",
 	}
 	err := db.CreateUser(user)
@@ -77,6 +80,7 @@ func TestCreateTransaction(t *testing.T) {
 		LastName:    "User",
 		PhoneNumber: "1112223333",
 		Email:       "deleteuser@example.com",
+		Status:      "active",
 		Password:    "password123",
 	}
 	err := db.CreateUser(user)
@@ -91,6 +95,7 @@ func TestCreateTransaction(t *testing.T) {
 		FromWalletID: wallet.ID,
 		Type:         "deposit",
 		Amount:       100.0,
+		Status:       "completed",
 		CreatedAt:    time.Now(),
 	}
 
@@ -103,7 +108,14 @@ func TestCreateTransaction(t *testing.T) {
 func setupTestDB(t *testing.T) (*DB, func()) {
 	t.Helper()
 	// Use environment variable or test config for database URL
-	databaseURL := "postgresql://golangjwt:golangjwt@127.0.0.1:5435/golangjwt_test?sslmode=disable"
+	// databaseURL := "postgresql://golangjwt:golangjwt@127.0.0.1:5435/golangjwt_test?sslmode=disable"
+
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+
+	if databaseURL == "" {
+		panic("TEST_DATABASE_URL environment variable is not set")
+	}
+
 	db, err := NewDB(databaseURL)
 	if err != nil {
 		t.Fatalf("Failed to connect to test database: %v", err)

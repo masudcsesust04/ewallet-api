@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	}
 
 	// Clean tabels before running tests
-	_, err = testDB.pool.Exec(context.Background(), "TRUNCATE TABLES transactions, wallets, refresh_tokens, users RESTART IDENTITY CASCADE")
+	_, err = testDB.pool.Exec(context.Background(), "TRUNCATE TABLE transactions, wallets, refresh_tokens, users RESTART IDENTITY CASCADE;")
 	if err != nil {
 		panic("failed to truncate tables: " + err.Error())
 	}

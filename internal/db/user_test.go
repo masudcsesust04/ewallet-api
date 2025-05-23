@@ -92,6 +92,7 @@ func TestCreateAndDeleteRefreshToken(t *testing.T) {
 		LastName:    "User",
 		PhoneNumber: "4445556666",
 		Email:       "tokenuser@example.com",
+		Status:      "active",
 		Password:    "password123",
 	}
 
