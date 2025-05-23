@@ -132,11 +132,6 @@ func (h *WalletHandler) Deposit(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if wallet.Balance < req.Amount {
-		respondError(w, http.StatusBadRequest, "Insufficient funds")
-		return
-	}
-
 	newBalance := wallet.Balance + req.Amount
 	err = h.DB.UpdateWalletBalance(wallet.ID, newBalance)
 	if err != nil {

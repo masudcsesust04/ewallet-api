@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/masudcsesust04/ewallet-api/internal/db"
 
 	"github.com/gorilla/mux"
@@ -28,6 +29,17 @@ func NewMockDB() *MockDB {
 		Wallets:      make(map[int64]*db.Wallet),
 		Transactions: []*db.Transaction{},
 	}
+}
+
+func generateMockJWTToken(userID int) (string, error) {
+	// Replace with your JWT secret and claims structure
+	secret := "your_jwt_secret"
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"exp":     time.Now().Add(time.Hour).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
 }
 
 func (m *MockDB) GetWalletByID(walletID int64) (*db.Wallet, error) {
@@ -166,19 +178,32 @@ func TestDeposit(t *testing.T) {
 	mockDB := NewMockDB()
 	r := setupRouterWithMockDB(mockDB)
 
+	// Simulate user login and generate JWT token
+	userID := 1
+	token, err := generateMockJWTToken(userID) // Mock function to generate a JWT token
+	if err != nil {
+		t.Fatalf("failed to generate JWT token: %v", err)
+	}
+
 	payload := map[string]interface{}{
-		"user_id": 1,
+		"user_id": userID,
 		"amount":  100.0,
 	}
 	body, _ := json.Marshal(payload)
 	req := httptest.NewRequest("POST", "/wallets/deposit", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token) // Add JWT token to the Authorization header
 	w := httptest.NewRecorder()
 
 	r.ServeHTTP(w, req)
 
+	// Add assertions to verify the response
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, w.Code)
+	}
+
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "Deposit successful")
+	assert.Contains(t, w.Body.String(), "Deposited successful")
 	wallet, _ := mockDB.GetWalletByUserID(1)
 	assert.Equal(t, 100.0, wallet.Balance)
 }
@@ -227,7 +252,7 @@ func TestTransfer(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "Transfer successful")
+	assert.Contains(t, w.Body.String(), "Transfered successfully")
 	wallet1, _ := mockDB.GetWalletByUserID(1)
 	wallet2, _ := mockDB.GetWalletByUserID(2)
 	assert.Equal(t, 70.0, wallet1.Balance)
@@ -246,7 +271,7 @@ func TestBalance(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), `"Balance":150`)
+	assert.Contains(t, w.Body.String(), `"balance":150`)
 }
 
 func TestTransactions(t *testing.T) {
@@ -268,12 +293,12 @@ func TestTransactions(t *testing.T) {
 
 	r := setupRouterWithMockDB(mockDB)
 
-	req := httptest.NewRequest("GET", "/wallets/transactions?user_id=1", nil)
+	req := httptest.NewRequest("GET", "/wallets/transactions?wallet_id=1", nil)
 	w := httptest.NewRecorder()
 
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), `"Type":"deposit"`)
-	assert.Contains(t, w.Body.String(), `"Type":"withdrawal"`)
+	assert.Contains(t, w.Body.String(), `"type":"deposit"`)
+	assert.Contains(t, w.Body.String(), `"type":"withdrawal"`)
 }
